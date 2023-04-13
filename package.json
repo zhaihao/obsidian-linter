@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production",
+    "mkdir": "mkdir -p '/Users/zhaihao/Library/Mobile Documents/iCloud~md~obsidian/Documents/ORISON/.obsidian/plugins/obsidian-linter'",
+    "build": "node esbuild.config.mjs production && cp src/styles.css main.js manifest.json '/Users/zhaihao/Library/Mobile Documents/iCloud~md~obsidian/Documents/ORISON/.obsidian/plugins/obsidian-linter'",
     "test": "jest",
     "test-suite": "jest -t \"$1\"",
     "docs": "node docs.js",

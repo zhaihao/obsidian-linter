@@ -10,7 +10,7 @@ export const tildeBlockRegexTemplate = fencedRegexTemplate.replaceAll('X', '~');
 export const indentedBlockRegex = '^((\t|( {4})).*\n)+';
 export const codeBlockRegex = new RegExp(`${backtickBlockRegexTemplate}|${tildeBlockRegexTemplate}|${indentedBlockRegex}`, 'gm');
 // based on https://stackoverflow.com/a/26010910/8353749
-export const wikiLinkRegex = /(!?)\[{2}([^\][\n|]+)(\|([^\][\n|]+))?\]{2}/g;
+export const wikiLinkRegex = /(!?)\[{2}([^\][\n|]+)(\|([^\][\n|]+)){0,2}\]{2}/g;
 // based on https://davidwells.io/snippets/regex-match-markdown-links
 export const genericLinkRegex = /(!?)\[([^[]*)\](\(.*\))/g;
 export const tagWithLeadingWhitespaceRegex = /(\s|^)(#[^\s#;.,><?!=+]+)/g;
@@ -36,6 +36,8 @@ export function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
+const head = /(\p{sc=Han}|\p{sc=Katakana}|\p{sc=Hiragana}|\p{sc=Hangul})( *)(\[[^[]*\]\(.*\)|`[^`]*`|\w+|[-+'"([¥$]|\*[^*])/gmu;
+const tail = /(\[[^[]*\]\(.*\)|`[^`]*`|\w+|[-+;:'"°%$)\]]|[^*]\*)( *)(\p{sc=Han}|\p{sc=Katakana}|\p{sc=Hiragana}|\p{sc=Hangul})/gmu;
 /**
  * Removes spaces from around the wiki link text
  * @param {string} text The text to remove the space from around wiki link text
@@ -48,7 +50,23 @@ export function removeSpacesInWikiLinkText(text: string): string {
       // wiki link with link text
       if (link.includes('|')) {
         const startLinkTextPosition = link.indexOf('|');
-        const newLink = link.substring(0, startLinkTextPosition+1) + link.substring(startLinkTextPosition+1, link.length - 2).trim() + ']]';
+        let urlText = link.substring(0, startLinkTextPosition);
+        if (urlText.startsWith('![[')) {
+          urlText = '![[' + urlText.substring(3).trim();
+        }
+        if (urlText.startsWith('[[')) {
+          urlText = '[[' + urlText.substring(2).trim();
+        }
+        let otherText = link.substring(startLinkTextPosition + 1, link.length - 2).trim();
+        if (otherText.includes('|')) {
+          const s = otherText.indexOf('|');
+          let title = otherText.substring(0, s).trim();
+          title = title.replace(head, '$1 $3').replace(tail, '$1 $3');
+          otherText = title + '|' + otherText.substring(s + 1).trim();
+        } else {
+          otherText = otherText.replace(head, '$1 $3').replace(tail, '$1 $3');
+        }
+        const newLink = urlText + '|' + otherText + ']]';
         text = text.replace(link, newLink);
       }
     }
